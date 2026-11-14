@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Bitter:wght@600;700;800&family=Saira+Condensed:wght@600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -46,30 +47,25 @@ code {
         --radius: 0.5rem;
     }
     .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
+        --background: 30 17% 7%;
+        --foreground: 38 62% 88%;
+        --card: 30 17% 10%;
+        --card-foreground: 38 62% 88%;
+        --popover: 30 17% 11%;
+        --popover-foreground: 38 62% 88%;
+        --primary: 41 79% 57%;
+        --primary-foreground: 30 17% 8%;
+        --secondary: 30 14% 16%;
+        --secondary-foreground: 38 62% 88%;
+        --muted: 30 14% 16%;
+        --muted-foreground: 35 18% 57%;
+        --accent: 33 22% 20%;
+        --accent-foreground: 38 62% 92%;
+        --destructive: 0 65% 48%;
         --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+        --border: 35 30% 24%;
+        --input: 35 30% 28%;
+        --ring: 41 79% 57%;
     }
 }
 

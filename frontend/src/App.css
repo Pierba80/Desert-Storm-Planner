@@ -1,34 +1,272 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+:root {
+  --bg: #15120f;
+  --panel: #1f1a15;
+  --panel-2: #29221b;
+  --line: rgba(233, 200, 150, 0.16);
+  --line-strong: rgba(233, 200, 150, 0.32);
+  --text: #f3e6cf;
+  --sand: #e6cfa8;
+  --muted: #a8957a;
+  --gold: #e8b33a;
+  --orange: #d9772b;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Barlow", "Helvetica Neue", sans-serif;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+::selection {
+  background: rgba(232, 179, 58, 0.35);
 }
 
-.App-link {
-    color: #61dafb;
+.font-head {
+  font-family: "Saira Condensed", "Barlow", sans-serif;
+}
+.font-plate {
+  font-family: "Bitter", Georgia, serif;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.app-shell {
+  background:
+    radial-gradient(1200px 500px at 15% -10%, rgba(217, 119, 43, 0.14), transparent 60%),
+    var(--bg);
+}
+
+.brand-mark {
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, var(--gold), var(--orange));
+  box-shadow: 0 0 12px rgba(232, 179, 58, 0.55);
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.box {
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.hdr-btn {
+  color: var(--sand);
+  transition: background-color 0.2s, color 0.2s;
+}
+.hdr-btn:hover {
+  background: rgba(232, 179, 58, 0.12);
+  color: #fff;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: #1a1612;
+  font-weight: 700;
+  transition: background-color 0.2s, transform 0.15s;
+}
+.btn-gold:hover {
+  background: #f2c14e;
+}
+.btn-gold:active {
+  transform: translateY(1px);
+}
+.btn-outline-gold {
+  background: transparent;
+  border: 1px solid rgba(232, 179, 58, 0.55);
+  color: var(--gold);
+  font-weight: 600;
+}
+.btn-outline-gold:hover {
+  background: rgba(232, 179, 58, 0.12);
+  color: #f2c14e;
+}
+
+.field {
+  background: rgba(0, 0, 0, 0.28);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+.field::placeholder {
+  color: #7d6c56;
+}
+.field:focus-visible {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+  outline: none;
+}
+
+.chip {
+  min-height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 179, 58, 0.35);
+  background: rgba(232, 179, 58, 0.08);
+  padding: 2px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sand);
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+button.chip:hover {
+  border-color: var(--gold);
+  background: rgba(232, 179, 58, 0.2);
+  color: #fff;
+}
+.chip-static {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.view-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+.view-tab:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+.view-tab-on {
+  border-color: var(--gold);
+  background: rgba(232, 179, 58, 0.14);
+  color: var(--gold);
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sand);
+  transition: background-color 0.2s, color 0.2s;
+}
+.tool-btn:hover {
+  background: rgba(232, 179, 58, 0.12);
+  color: #fff;
+}
+
+.map-grid {
+  background-color: #120f0c;
+  background-image:
+    linear-gradient(rgba(232, 179, 58, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 179, 58, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.zone {
+  border: 2px solid transparent;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+.zone:hover,
+.zone:focus-visible {
+  border-color: rgba(255, 233, 190, 0.85);
+  background: rgba(255, 233, 190, 0.08);
+}
+.zone-assigned {
+  border-color: var(--team);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--team) 55%, transparent);
+}
+.zone-edit {
+  border: 2px dashed var(--gold);
+  background: rgba(232, 179, 58, 0.12);
+}
+.zone-tag {
+  pointer-events: none;
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  border-radius: 3px;
+  background: rgba(26, 22, 18, 0.9);
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sand);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.zone:hover .zone-tag,
+.zone:focus-visible .zone-tag {
+  opacity: 1;
+}
+.label-hit {
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s;
+}
+.label-hit:hover {
+  border-color: rgba(255, 233, 190, 0.7);
+}
+
+.plate {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  border-left: 0.7px solid rgba(92, 62, 32, 0.55);
+  border-right: 0.7px solid rgba(92, 62, 32, 0.55);
+  border-bottom: 0.7px solid rgba(92, 62, 32, 0.55);
+  transition: box-shadow 0.2s, filter 0.2s;
+}
+.plate:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 0 1.5px rgba(232, 179, 58, 0.8);
+}
+.plate-edit {
+  outline: 1.5px dashed var(--gold);
+  outline-offset: 2px;
+}
+
+.panel-dialog {
+  background: var(--panel);
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.title-in {
+  animation: title-in 0.3s ease-out;
+}
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.soon-glow {
+  box-shadow: 0 0 16px rgba(232, 179, 58, 0.35);
+}
+.live-glow {
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-page {
+    break-after: page;
+  }
 }
