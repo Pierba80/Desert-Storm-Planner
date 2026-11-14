@@ -115,7 +115,7 @@ function candidates(r, w, h, side) {
     return [{ x, y: bcy - h / 2 }, { x, y: cy - h / 2 }, { x, y: b.y }, { x, y: u.y + u.h - h }, { x, y: b.y - h * 0.5 }, { x, y: u.y + u.h - h * 0.5 }];
   }
   if (side === "above") {
-    return [{ x: cx - w / 2, y: above }, { x: cx - w * 0.2, y: above }, { x: cx - w * 0.8, y: above }, { x: cx, y: above }, { x: cx - w, y: above }, { x: cx + 25, y: above }, { x: cx - w - 25, y: above }, { x: cx + 45, y: above }, { x: cx - w - 45, y: above }];
+    return [{ x: cx - w / 2, y: above }, { x: cx - w * 0.2, y: above }, { x: cx - w * 0.8, y: above }, { x: cx, y: above }, { x: cx - w, y: above }, { x: cx + 25, y: above }, { x: cx - w - 25, y: above }, { x: cx + 45, y: above }, { x: cx - w - 45, y: above }, { x: cx + 75, y: above }, { x: cx - w - 75, y: above }, { x: cx - w * 0.5 + 60, y: above }, { x: cx - w * 0.5 - 60, y: above }];
   }
   if (side === "below") {
     // Under the label when there is room, otherwise under the building beside the printed label.

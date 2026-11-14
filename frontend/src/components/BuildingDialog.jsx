@@ -36,14 +36,18 @@ function Editor({ team, id, teams, knownNames, unassigned, placements, powerIdx,
   const color = TEAM_COLOR[team];
 
   const register = (names) => {
+    const added = [], full = [], clashes = [];
     for (const n of names) {
       const e = placements.get(keyOf(n));
       const clash = e?.placements.filter((p) => p.team !== team || p.role === "leader" || p.role === "player") ?? [];
-      if (clash.length) toast.warning(`${e.name} is already on ${clash.map(placementLabel).join(", ")}`);
+      if (clash.length) clashes.push(`${e.name} (${clash.map(placementLabel).join(", ")})`);
       const r = actions.ensureInRoster(team, n);
-      if (r === "starters") toast(`${cleanName(n)} added to Team ${team} starters`);
-      if (r === "full") toast.warning(`Team ${team} starters are full (20) — ${cleanName(n)} is not in the roster`);
+      if (r === "starters") added.push(cleanName(n));
+      if (r === "full") full.push(cleanName(n));
     }
+    if (clashes.length) toast.warning(`Already placed: ${clashes.join("; ")}`);
+    if (added.length) toast(`Added to Team ${team} starters: ${added.join(", ")}`);
+    if (full.length) toast.warning(`Team ${team} starters are full (20) — not in roster: ${full.join(", ")}`);
   };
   const addNames = (names) => {
     const clean = names.map(cleanName).filter(Boolean).filter((n) => !hereKeys.has(keyOf(n)));

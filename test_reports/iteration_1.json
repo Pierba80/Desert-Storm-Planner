@@ -1,0 +1,36 @@
+{
+  "summary": "Frontend-only E2E (Playwright, desktop 1920x1080 + mobile 390x844) of Desert Storm Planner. All 11 structure buttons open building-dialog with exact names. Leader/players (comma separated) create nameplates and auto-add names to starters (caps at 20 with warning toast). With all 11 buildings assigned (leader + 4 players each), checked bounding boxes: every plate is on its required side (oil_1/hospital_1 left, hospital_2/oil_2 right, info_center/hospital_4/arsenal/mercenary above, hospital_3/tech_center below building top - placed beside the printed label since no room under it; silo auto -> right). No plate overlaps another plate and all plates stay inside map-image bounds. Drag of a nameplate moves it without opening the dialog; auto-arrange-toolbar-btn restores the exact original position. Edit layout: zone drag works, no dialog opens in edit mode, reset-layout-btn restores. Members: paste of 38 lines parsed (38 with power), single add, pasting duplicates is ignored, dedupe button shows count and removes duplicate. Roster: 23 names -> 20/20 starters, input disabled when full; reserves cap 10/10; move/remove work. Conflicts section appears for a name in Team A building + Team B roster. Balance preview shows powers (717M vs 716M), cancel leaves state unchanged, apply sets rosters and building assignments untouched. Export Team A downloads desert-storm-team-a-plan.png. Countdown set/save works. Persistence after reload OK. Mobile: open-console-btn opens sheet, building dialog usable (full width), direct structure tap works, no horizontal overflow. No JS page errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Nameplate layout (mercenary)", "issue": "With all 11 buildings assigned, Mercenary plate (above side) is pushed far left of its building (plate x 509-713 vs building 691-869 at 1920 view) and its top-right corner slightly overlaps the Silo structure zone (~15x10 px). Not a plate-plate overlap, but it covers part of Silo hit zone and reads as detached from Mercenary.", "selector": "[data-testid='nameplate-mercenary']", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Balance teams", "issue": "proposeBalance (lib/members.js) ignores building assignments. A player who leads Team A's Arsenal (Rex) was placed into Team B starters by the balance, which immediately created a 'Rex in both teams' conflict. Players already on a team's building should be pinned to that team when balancing.", "affected_selectors": ["[data-testid='balance-apply-btn']", "[data-testid='conflicts-section']"]},
+      {"flow": "Balance teams pool", "issue": "When rosters already have >=2 names the pool only uses roster names; the 8 'Not in any team' members were left out even though both teams had free slots (15/20 starters, 0/10 reserves). Consider including unassigned members or stating it in the preview.", "affected_selectors": ["[data-testid='balance-dialog']"]}
+    ],
+    "design_issues": [
+      {"screen": "Mobile 390px map", "issues": ["Map renders at 36% and occupies only ~200px of a ~500px tall map area; lots of empty vertical space - consider fitting by width / taller default zoom."]},
+      {"screen": "Building dialog", "issues": ["Adding many names fires one toast per name (and 'starters are full' warnings for each), stacking a lot of toasts; consider one aggregated toast."]},
+      {"screen": "Export", "issues": ["Team PNG is ~10 MB; consider downscaling or JPEG option for sharing in game chat."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Balance: pin players assigned to a team's buildings to that team (avoid creating cross-team conflicts)",
+    "Optionally include unassigned members in balance pool when slots are free",
+    "Minor: improve Mercenary plate placement so it doesn't overlap Silo zone when Silo plate is present",
+    "Minor: aggregate toasts when adding multiple players"
+  ],
+  "critical_code_review_comments": [
+    "lib/members.js proposeBalance: no awareness of assignments -> conflicts after apply",
+    "layout.js: obstacle overlap score for plates vs other buildings allows small overlaps; could add hard penalty for structure zones",
+    "MembersView uses array index as key for rows while sorting; fine functionally but name inputs re-key on sort"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not requested)", "frontend": "95%"},
+  "seed_data_creation": "None persisted; tests used localStorage.clear() in their own browser contexts",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend-only app, state in localStorage key desert_storm_planner_state_v3. Tests done via UI in fresh contexts. Positional checks via getBoundingClientRect of nameplate-{id}, structure-{id}, structure-label-{id}. Re-verify balance behaviour with building-assigned players after fix."
+}

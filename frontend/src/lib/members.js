@@ -58,16 +58,31 @@ export function proposeBalance(teams, members) {
   const idx = memberIndex(members);
   const rosterNames = [...teams.A.starters, ...teams.A.reserves, ...teams.B.starters, ...teams.B.reserves];
   const seen = new Set();
-  let pool = rosterNames.filter((n) => {
+  const pool = [...rosterNames, ...members.map((m) => m.name)].filter((n) => {
     const k = keyOf(n);
     if (!k || seen.has(k)) return false;
     seen.add(k);
     return true;
   });
-  if (pool.length < 2) pool = members.map((m) => m.name);
-  const sorted = [...pool].sort((a, b) => powerOf(idx, b) - powerOf(idx, a));
+  const byPower = (a, b) => powerOf(idx, b) - powerOf(idx, a);
   const res = { A: { starters: [], reserves: [] }, B: { starters: [], reserves: [] } };
   const tot = { A: 0, B: 0 };
+  // Players already on a team's building stay in that team.
+  const pinnedKeys = new Set();
+  for (const t of ["A", "B"]) {
+    const onBuildings = Object.values(teams[t].assignments).flatMap((a) => [a.leader, ...a.players]);
+    for (const n of pool.filter((x) => onBuildings.some((b) => keyOf(b) === keyOf(x))).sort(byPower)) {
+      const k = keyOf(n);
+      if (pinnedKeys.has(k)) continue;
+      const list = res[t].starters.length < MAX_STARTERS ? "starters" : res[t].reserves.length < MAX_RESERVES ? "reserves" : null;
+      if (!list) continue;
+      pinnedKeys.add(k);
+      res[t][list].push(n);
+      tot[t] += list === "starters" ? powerOf(idx, n) : 0;
+    }
+  }
+  const sorted = pool.filter((n) => !pinnedKeys.has(keyOf(n))).sort(byPower);
+  const startersLeft = MAX_STARTERS * 2 - res.A.starters.length - res.B.starters.length;
   const fill = (names, list, max) => {
     const left = [];
     for (const n of names) {
@@ -82,7 +97,7 @@ export function proposeBalance(teams, members) {
     }
     return left;
   };
-  const afterStarters = fill(sorted.slice(0, MAX_STARTERS * 2), "starters", MAX_STARTERS);
-  const excluded = fill([...afterStarters, ...sorted.slice(MAX_STARTERS * 2)], "reserves", MAX_RESERVES);
-  return { rosters: res, totals: tot, excluded, poolSize: pool.length };
+  const afterStarters = fill(sorted.slice(0, startersLeft), "starters", MAX_STARTERS);
+  const excluded = fill([...afterStarters, ...sorted.slice(startersLeft)], "reserves", MAX_RESERVES);
+  return { rosters: res, totals: tot, excluded, poolSize: pool.length, pinned: pinnedKeys.size };
 }

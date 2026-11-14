@@ -18,7 +18,7 @@ export default function BalanceDialog({ open, onOpenChange, teams, members, onAp
 function Preview({ teams, members, onApply }) {
   const proposal = useMemo(() => proposeBalance(teams, members), [teams, members]);
   const idx = useMemo(() => memberIndex(members), [members]);
-  const { rosters, excluded, poolSize } = proposal;
+  const { rosters, excluded, poolSize, pinned } = proposal;
   const st = (t) => totalPower(rosters[t].starters, members);
   const diff = Math.abs(st("A") - st("B"));
   const noPower = members.every((m) => m.power == null);
@@ -28,7 +28,7 @@ function Preview({ teams, members, onApply }) {
       <DialogHeader className="text-left">
         <DialogTitle className="flex items-center gap-2 font-head text-2xl font-extrabold uppercase text-[var(--gold)]"><Scale className="size-5" /> Balance teams — preview</DialogTitle>
         <DialogDescription className="text-[var(--muted)]">
-          Proposed split of {poolSize} players by power. Nothing changes until you apply it. Building assignments are not touched.
+          Proposed split of {poolSize} players (rosters + member list) by power.{pinned > 0 && ` ${pinned} players already on a building stay in their team.`} Nothing changes until you apply it. Building assignments are not touched.
         </DialogDescription>
       </DialogHeader>
       {poolSize < 2 ? (
