@@ -1,4 +1,4 @@
-import { MAP_LABELS, STAGE_W, STRUCTURES, cleanName, hasAssignment } from "@/lib/planner";
+import { MAP_LABELS, PLATE_SIDE, STAGE_W, STRUCTURES, cleanName, hasAssignment } from "@/lib/planner";
 
 export const FONT_PLATE = '"Bitter", Georgia, serif';
 export const FONT_BODY = '"Barlow", "Helvetica Neue", sans-serif';
@@ -105,10 +105,27 @@ export function buildingRects(hotspots, stageH) {
   return out;
 }
 
-function candidates(u, w, h) {
+function candidates(r, w, h, side) {
+  const u = r.union, b = r.building, l = r.label;
   const g = PLATE.gap + 2;
-  const cx = u.x + u.w / 2, cy = u.y + u.h / 2;
+  const cx = u.x + u.w / 2, cy = u.y + u.h / 2, bcy = b.y + b.h / 2;
   const below = u.y + u.h + g, above = u.y - h - g, right = u.x + u.w + g, left = u.x - w - g;
+  if (side === "left" || side === "right") {
+    const x = side === "left" ? left : right;
+    return [{ x, y: bcy - h / 2 }, { x, y: cy - h / 2 }, { x, y: b.y }, { x, y: u.y + u.h - h }, { x, y: b.y - h * 0.5 }, { x, y: u.y + u.h - h * 0.5 }];
+  }
+  if (side === "above") {
+    return [{ x: cx - w / 2, y: above }, { x: cx - w * 0.2, y: above }, { x: cx - w * 0.8, y: above }, { x: cx, y: above }, { x: cx - w, y: above }, { x: cx + 25, y: above }, { x: cx - w - 25, y: above }, { x: cx + 45, y: above }, { x: cx - w - 45, y: above }];
+  }
+  if (side === "below") {
+    // Under the label when there is room, otherwise under the building beside the printed label.
+    const under = b.y + b.h + g;
+    return [
+      { x: cx - w / 2, y: below }, { x: cx - w * 0.2, y: below }, { x: cx - w * 0.8, y: below },
+      { x: l.x + l.w + g, y: under }, { x: l.x - w - g, y: under },
+      { x: l.x + l.w + g, y: l.y + l.h - h }, { x: l.x - w - g, y: l.y + l.h - h },
+    ];
+  }
   return [
     { x: cx - w / 2, y: below },
     { x: right, y: cy - h / 2 },
@@ -149,7 +166,7 @@ export function layoutPlates({ plan, hotspots, plateOffsets, stageH }) {
   const placed = [];
   const out = {};
   const manual = items.filter((i) => plateOffsets[i.id]);
-  const auto = items.filter((i) => !plateOffsets[i.id]);
+  const auto = items.filter((i) => !plateOffsets[i.id]).sort((a, b) => Number(!PLATE_SIDE[a.id]) - Number(!PLATE_SIDE[b.id]));
   for (const it of manual) {
     const r = rects[it.id], o = plateOffsets[it.id];
     const { w, h } = it.content;
@@ -161,7 +178,7 @@ export function layoutPlates({ plan, hotspots, plateOffsets, stageH }) {
     const r = rects[it.id];
     const { w, h } = it.content;
     let best = null;
-    candidates(r.union, w, h).forEach((c, i) => {
+    candidates(r, w, h, PLATE_SIDE[it.id]).forEach((c, i) => {
       const box = clampBox({ x: c.x, y: c.y, w, h }, stageH);
       let ov = 0;
       for (const o of obstacles) ov += overlap(box, o);

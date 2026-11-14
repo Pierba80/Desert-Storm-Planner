@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 export const STAGE_W = 1000;
 export const DEFAULT_MAP_SRC = "/Desert-map.png";
 export const DEFAULT_MAP_RATIO = 941 / 1672;
-export const LAYOUT_VERSION = 10;
+export const LAYOUT_VERSION = 11;
 export const MAX_STARTERS = 20;
 export const MAX_RESERVES = 10;
 
@@ -55,6 +55,14 @@ export const MAP_LABELS = {
   hospital_3: { dx: -0.2, dy: 8.7, w: 9, h: 4.8 },
   mercenary: { dx: 0, dy: 11.2, w: 9.6, h: 4.8 },
   tech_center: { dx: -0.2, dy: 8.7, w: 10.4, h: 4.8 },
+};
+
+// Preferred nameplate side per building (Silo is auto-placed).
+export const PLATE_SIDE = {
+  oil_1: "left", hospital_1: "left",
+  hospital_2: "right", oil_2: "right",
+  hospital_3: "below", tech_center: "below",
+  info_center: "above", hospital_4: "above", arsenal: "above", mercenary: "above",
 };
 
 export const emptyAssignment = () => ({ leader: "", players: [] });
