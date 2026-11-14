@@ -183,7 +183,7 @@ export default function Planner() {
                 <Button size="sm" data-testid="done-editing-btn" className="btn-gold" onClick={() => setEditMode(false)}>Done</Button>
               </div>
             )}
-            <div className="relative mx-2 mb-2 min-h-0 flex-1 overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--panel-2)] sm:mx-4">
+            <div className={`relative mx-2 mb-2 min-h-0 flex-1 overflow-hidden sm:mx-4 ${view === "map" ? "" : "rounded-lg border border-[var(--line)] bg-[var(--panel-2)]"}`}>
               {view === "roster" && <RosterView {...shared} />}
               {view === "members" && <MembersView members={state.members} placements={placements} actions={actions} />}
               {view === "map" && (

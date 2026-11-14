@@ -270,3 +270,12 @@ button.chip:hover {
     break-after: page;
   }
 }
+
+.map-area {
+  container-type: size;
+}
+.map-frame {
+  width: min(100cqw, 100cqh * var(--ratio));
+  aspect-ratio: var(--ratio);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}

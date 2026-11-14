@@ -14,7 +14,7 @@ function useMapView(wrapRef, stageH) {
     if (!el) return;
     const { width, height } = el.getBoundingClientRect();
     if (!width || !height) return;
-    const s = Math.min(width / STAGE_W, height / stageH) * 0.98;
+    const s = Math.min(width / STAGE_W, height / stageH);
     setView({ s, tx: (width - STAGE_W * s) / 2, ty: (height - stageH * s) / 2 });
   }, [wrapRef, stageH]);
   useEffect(() => {
@@ -155,10 +155,12 @@ export default function BattleMap(p) {
 
   return (
     <div className="flex h-full w-full flex-col">
+      <div className="map-area flex min-h-0 w-full flex-1 items-start justify-center p-1 lg:items-center">
       <div
         ref={wrapRef}
         data-testid="map-workspace"
-        className="map-grid relative min-h-0 w-full flex-1 cursor-grab touch-none select-none overflow-hidden active:cursor-grabbing"
+        className="map-frame map-grid relative cursor-grab touch-none select-none overflow-hidden rounded-lg border border-[var(--line-strong)] active:cursor-grabbing"
+        style={{ "--ratio": STAGE_W / stageH }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -178,7 +180,7 @@ export default function BattleMap(p) {
               const img = e.currentTarget;
               if (img.naturalWidth) setStageH((STAGE_W * img.naturalHeight) / img.naturalWidth);
             }}
-            className="pointer-events-none absolute inset-0 h-full w-full rounded-md shadow-[0_10px_50px_rgba(0,0,0,0.55)]"
+            className="pointer-events-none absolute inset-0 h-full w-full"
           />
 
           <svg className="pointer-events-none absolute inset-0 z-[12] overflow-visible" width={STAGE_W} height={stageH}>
@@ -235,8 +237,9 @@ export default function BattleMap(p) {
           ))}
         </div>
       </div>
+      </div>
 
-      <div data-testid="map-toolbar" className="flex h-12 shrink-0 items-center gap-2 border-t border-[var(--line)] bg-[var(--panel)] px-2">
+      <div data-testid="map-toolbar" className="flex h-12 shrink-0 items-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--panel)] px-2">
         <div className="flex items-center overflow-hidden rounded-md border border-[var(--line)]">
           <button type="button" data-testid="zoom-out-btn" aria-label="Zoom out" onClick={() => zoomCenter(0.8)} className="tool-btn h-9 w-10">
             <Minus className="size-4" />
