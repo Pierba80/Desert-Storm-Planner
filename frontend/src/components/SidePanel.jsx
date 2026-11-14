@@ -39,45 +39,13 @@ export default function SidePanel({ team, teams, members, conflicts, unassigned,
             <p className="eyebrow flex-1">Not in any team</p>
             <span data-testid="unassigned-count" className="font-head text-lg font-bold text-[var(--gold)]">{members.length ? `${unassigned.length}/${members.length}` : "—"}</span>
           </div>
-          {members.length === 0 ? (
-            <p className="mt-2 text-xs text-[var(--muted)]">Add your alliance members to track who still needs a team.</p>
-          ) : unassigned.length === 0 ? (
-            <p data-testid="all-assigned-msg" className="mt-2 text-xs text-emerald-400">Every member is in Team A or Team B.</p>
-          ) : (
-            <ul className="mt-2 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
-              {unassigned.map((n) => <li key={n} data-testid={`unassigned-member-${slug(n)}`} className="chip chip-static">{n}</li>)}
-            </ul>
-          )}
+          <UnassignedBody members={members} unassigned={unassigned} />
           <Button variant="ghost" size="sm" data-testid="goto-members-btn" onClick={() => onGoto("members")} className="mt-2 h-8 px-2 text-xs text-[var(--gold)] hover:bg-[var(--gold)]/10">
             <Users className="size-3.5" /> Manage members
           </Button>
         </section>
         <ul className="space-y-1">
-          {STRUCTURES.map((s) => {
-            const a = plan.assignments[s.id];
-            const on = hasAssignment(a);
-            const count = a ? a.players.filter(cleanName).length : 0;
-            return (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  data-testid={`open-building-${s.id}`}
-                  onClick={() => onOpenBuilding(s.id)}
-                  className={`flex min-h-12 w-full items-center gap-2 rounded-md border px-3 py-1.5 text-left transition-colors duration-200 ${on ? "border-[var(--line-strong)] bg-[var(--panel-2)]" : "border-transparent hover:bg-white/[0.03]"}`}
-                >
-                  <span className="size-2 shrink-0 rounded-full" style={{ background: on ? color : "#5a4d3d" }} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-[var(--text)]">{s.name}</span>
-                    <span className="flex items-center gap-1 truncate text-xs text-[var(--muted)]">
-                      {cleanName(a?.leader) ? <><Crown className="size-3 text-[var(--gold)]" /> {cleanName(a.leader)}</> : on ? "No leader yet" : "Empty"}
-                    </span>
-                  </span>
-                  {count > 0 && <span className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[10px] text-[var(--sand)]">+{count}</span>}
-                  <ChevronRight className="size-4 text-[var(--muted)]" />
-                </button>
-              </li>
-            );
-          })}
+          {STRUCTURES.map((s) => <BuildingRow key={s.id} s={s} a={plan.assignments[s.id]} color={color} onOpen={onOpenBuilding} />)}
         </ul>
       </div>
       <div className="border-t border-[var(--line)] p-3">
@@ -114,7 +82,7 @@ function Conflicts({ conflicts, team, onOpenBuilding, onGoto }) {
         {conflicts.map((c) => (
           <li key={c.name} data-testid={`conflict-${slug(c.name)}`}>
             <p className="text-sm font-semibold text-red-100">
-              {c.name} <span className="text-[11px] font-normal text-red-300">{[c.bothTeams && "in both teams", c.multiBuilding && "on 2+ buildings"].filter(Boolean).join(" · ")}</span>
+              {c.name} <span className="text-[11px] font-normal text-red-300">{conflictReasons(c)}</span>
             </p>
             <div className="mt-0.5 flex flex-wrap gap-1">
               {c.placements.map((p, i) => (
@@ -143,5 +111,46 @@ function Stat({ label, value, testId }) {
       <p className="eyebrow !text-[9px]">{label}</p>
       <p data-testid={testId} className="font-head text-xl font-bold text-[var(--sand)]">{value}</p>
     </div>
+  );
+}
+
+const conflictReasons = (c) => [c.bothTeams && "in both teams", c.multiBuilding && "on 2+ buildings"].filter(Boolean).join(" · ");
+
+function UnassignedBody({ members, unassigned }) {
+  if (members.length === 0) return <p className="mt-2 text-xs text-[var(--muted)]">Add your alliance members to track who still needs a team.</p>;
+  if (unassigned.length === 0) return <p data-testid="all-assigned-msg" className="mt-2 text-xs text-emerald-400">Every member is in Team A or Team B.</p>;
+  return (
+    <ul className="mt-2 flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
+      {unassigned.map((n) => <li key={n} data-testid={`unassigned-member-${slug(n)}`} className="chip chip-static">{n}</li>)}
+    </ul>
+  );
+}
+
+function LeaderLine({ a, on }) {
+  const leader = cleanName(a?.leader);
+  if (leader) return <><Crown className="size-3 text-[var(--gold)]" /> {leader}</>;
+  return on ? "No leader yet" : "Empty";
+}
+
+function BuildingRow({ s, a, color, onOpen }) {
+  const on = hasAssignment(a);
+  const count = a ? a.players.filter(cleanName).length : 0;
+  return (
+    <li>
+      <button
+        type="button"
+        data-testid={`open-building-${s.id}`}
+        onClick={() => onOpen(s.id)}
+        className={`flex min-h-12 w-full items-center gap-2 rounded-md border px-3 py-1.5 text-left transition-colors duration-200 ${on ? "border-[var(--line-strong)] bg-[var(--panel-2)]" : "border-transparent hover:bg-white/[0.03]"}`}
+      >
+        <span className="size-2 shrink-0 rounded-full" style={{ background: on ? color : "#5a4d3d" }} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-[var(--text)]">{s.name}</span>
+          <span className="flex items-center gap-1 truncate text-xs text-[var(--muted)]"><LeaderLine a={a} on={on} /></span>
+        </span>
+        {count > 0 && <span className="rounded bg-black/30 px-1.5 py-0.5 font-mono text-[10px] text-[var(--sand)]">+{count}</span>}
+        <ChevronRight className="size-4 text-[var(--muted)]" />
+      </button>
+    </li>
   );
 }

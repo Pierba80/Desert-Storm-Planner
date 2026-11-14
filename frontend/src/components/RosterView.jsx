@@ -9,7 +9,7 @@ import {
 import { DupNote, NameChips } from "@/components/NameChips";
 import BalanceDialog from "@/components/BalanceDialog";
 import {
-  MAX_RESERVES, MAX_STARTERS, STRUCTURES, STRUCTURE_BY_ID, TEAMS, TEAM_COLOR, cleanName, formatPower, keyOf, placementLabel, slug,
+  MAX_RESERVES, MAX_STARTERS, STRUCTURES, STRUCTURE_BY_ID, TEAMS, TEAM_COLOR, cleanName, formatPower, isBuildingPlacement, keyOf, placementLabel, slug,
   suggestNames, teamTitle,
 } from "@/lib/planner";
 import { totalPower } from "@/lib/members";
@@ -58,25 +58,12 @@ function RosterList({ team, teams, list, max, title, knownNames, unassigned, pla
   const full = names.length >= max;
   const segments = draft.split(",");
   const pending = segments.slice(0, -1).map(cleanName).filter(Boolean);
-  const inTeam = [...plan.starters, ...plan.reserves];
-  const hits = focus ? suggestNames(knownNames, segments[segments.length - 1], [...inTeam, ...pending]) : [];
+  const hits = focus ? suggestNames(knownNames, segments[segments.length - 1], [...plan.starters, ...plan.reserves, ...pending]) : [];
 
   const add = (raw) => {
-    const clean = raw.map(cleanName).filter(Boolean);
     setDraft("");
-    if (!clean.length) return;
-    const room = max - names.length;
-    if (room <= 0) return toast.warning(`${title} are full (${max})`);
-    for (const n of clean) {
-      const e = placements.get(keyOf(n));
-      const clash = e?.placements.filter((p) => p.team !== team) ?? [];
-      if (clash.length) toast.warning(`${e.name} is already on ${clash.map(placementLabel).join(", ")}`);
-    }
-    if (clean.length > room) toast.warning(`Only ${room} added — ${title.toLowerCase()} are limited to ${max}`);
-    actions.addToRoster(team, list, clean);
+    addToList(raw.map(cleanName).filter(Boolean), { team, list, max, title, room: max - names.length, placements, actions });
   };
-
-  const buildingsOf = (n) => (placements.get(keyOf(n))?.placements ?? []).filter((p) => p.team === team && (p.role === "leader" || p.role === "player"));
 
   return (
     <section data-testid={`roster-${list}`} className="rounded-lg border border-[var(--line)] bg-[var(--panel)] p-4">
@@ -104,55 +91,80 @@ function RosterList({ team, teams, list, max, title, knownNames, unassigned, pla
       <NameChips testId={`${list}-suggestions`} names={hits} onPick={(n) => { add([...pending, n]); ref.current?.focus(); }} powerIdx={powerIdx} />
       {!draft.trim() && !full && <NameChips testId={`${list}-unassigned`} label="Not in a team" names={unassigned.slice(0, 12)} onPick={(n) => add([n])} powerIdx={powerIdx} />}
       <ol className="mt-3 space-y-1.5">
-        {names.map((n, i) => {
-          const m = powerIdx.get(keyOf(n));
-          const bs = buildingsOf(n);
-          return (
-            <li key={`${n}-${i}`} data-testid={`${list}-row-${slug(n)}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md border border-[var(--line)] bg-[var(--panel-2)] px-2 py-1.5">
-              <span className="w-5 text-right font-mono text-[10px] text-[var(--muted)]">{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text)]">
-                {n}
-                {m?.squad && <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--muted)]">{m.squad}</span>}
-              </span>
-              {bs.map((p, j) => (
-                <span key={j} className="hidden rounded bg-black/30 px-1.5 py-0.5 text-[10px] text-[var(--sand)] sm:inline">{STRUCTURE_BY_ID[p.id]?.name}</span>
-              ))}
-              <span className="w-12 text-right font-mono text-[11px] text-[var(--sand)]">{formatPower(m?.power)}</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" data-testid={`${list}-assign-btn-${i}`} aria-label={`Put ${n} on a building`} className="size-8 text-[var(--gold)] hover:bg-[var(--gold)]/10">
-                    <Building2 className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-                  <DropdownMenuLabel>Put {n} on…</DropdownMenuLabel>
-                  {STRUCTURES.map((s) => (
-                    <DropdownMenuItem key={s.id} data-testid={`${list}-assign-${i}-to-${s.id}`} onClick={() => { actions.addPlayers(team, s.id, [n]); toast.success(`${n} added to ${s.name}`); }}>
-                      {s.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                variant="ghost" size="icon" data-testid={`${list}-move-btn-${i}`} aria-label={`Move ${n} to ${other}`} title={`Move to ${other}`}
-                onClick={() => {
-                  const cap = other === "starters" ? MAX_STARTERS : MAX_RESERVES;
-                  if (plan[other].length >= cap) return toast.warning(`${other} are full (${cap})`);
-                  actions.moveInRoster(team, n, other);
-                }}
-                className="size-8 text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]"
-              >
-                <ArrowDownUp className="size-4" />
-              </Button>
-              <Button variant="ghost" size="icon" data-testid={`${list}-remove-btn-${i}`} aria-label={`Remove ${n}`} onClick={() => actions.removeFromRoster(team, n)} className="size-8 text-[var(--muted)] hover:bg-red-500/10 hover:text-red-400">
-                <UserMinus className="size-4" />
-              </Button>
-              <DupNote name={n} placements={placements} team={team} id={list} testId={`${list}-dup-${i}`} crossOnly />
-            </li>
-          );
-        })}
+        {names.map((n, i) => (
+          <RosterRow key={keyOf(n)} n={n} i={i} list={list} other={other} team={team} plan={plan} placements={placements} powerIdx={powerIdx} actions={actions} />
+        ))}
         {names.length === 0 && <li className="rounded-md border border-dashed border-[var(--line)] px-3 py-6 text-center text-xs text-[var(--muted)]">No {title.toLowerCase()} yet.</li>}
       </ol>
     </section>
+  );
+}
+
+function addToList(clean, { team, list, max, title, room, placements, actions }) {
+  if (!clean.length) return;
+  if (room <= 0) {
+    toast.warning(`${title} are full (${max})`);
+    return;
+  }
+  const clashes = clean
+    .map((n) => placements.get(keyOf(n)))
+    .filter((e) => e?.placements.some((p) => p.team !== team))
+    .map((e) => `${e.name} (${e.placements.filter((p) => p.team !== team).map(placementLabel).join(", ")})`);
+  if (clashes.length) toast.warning(`Already in the other team: ${clashes.join("; ")}`);
+  if (clean.length > room) toast.warning(`Only ${room} added — ${title.toLowerCase()} are limited to ${max}`);
+  actions.addToRoster(team, list, clean);
+}
+
+function RosterRow({ n, i, list, other, team, plan, placements, powerIdx, actions }) {
+  const m = powerIdx.get(keyOf(n));
+  const buildings = (placements.get(keyOf(n))?.placements ?? []).filter((p) => p.team === team && isBuildingPlacement(p));
+  const move = () => {
+    const cap = other === "starters" ? MAX_STARTERS : MAX_RESERVES;
+    if (plan[other].length >= cap) {
+      toast.warning(`${other} are full (${cap})`);
+      return;
+    }
+    actions.moveInRoster(team, n, other);
+  };
+  return (
+    <li data-testid={`${list}-row-${slug(n)}`} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-md border border-[var(--line)] bg-[var(--panel-2)] px-2 py-1.5">
+      <span className="w-5 text-right font-mono text-[10px] text-[var(--muted)]">{i + 1}</span>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text)]">
+        {n}
+        {m?.squad && <span className="ml-1.5 text-[10px] font-medium uppercase tracking-wider text-[var(--muted)]">{m.squad}</span>}
+      </span>
+      {buildings.map((p) => (
+        <span key={`${p.id}-${p.role}`} className="hidden rounded bg-black/30 px-1.5 py-0.5 text-[10px] text-[var(--sand)] sm:inline">{STRUCTURE_BY_ID[p.id]?.name}</span>
+      ))}
+      <span className="w-12 text-right font-mono text-[11px] text-[var(--sand)]">{formatPower(m?.power)}</span>
+      <AssignMenu n={n} i={i} list={list} team={team} actions={actions} />
+      <Button variant="ghost" size="icon" data-testid={`${list}-move-btn-${i}`} aria-label={`Move ${n} to ${other}`} title={`Move to ${other}`} onClick={move} className="size-8 text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]">
+        <ArrowDownUp className="size-4" />
+      </Button>
+      <Button variant="ghost" size="icon" data-testid={`${list}-remove-btn-${i}`} aria-label={`Remove ${n}`} onClick={() => actions.removeFromRoster(team, n)} className="size-8 text-[var(--muted)] hover:bg-red-500/10 hover:text-red-400">
+        <UserMinus className="size-4" />
+      </Button>
+      <DupNote name={n} placements={placements} team={team} id={list} testId={`${list}-dup-${i}`} crossOnly />
+    </li>
+  );
+}
+
+function AssignMenu({ n, i, list, team, actions }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" data-testid={`${list}-assign-btn-${i}`} aria-label={`Put ${n} on a building`} className="size-8 text-[var(--gold)] hover:bg-[var(--gold)]/10">
+          <Building2 className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+        <DropdownMenuLabel>Put {n} on…</DropdownMenuLabel>
+        {STRUCTURES.map((s) => (
+          <DropdownMenuItem key={s.id} data-testid={`${list}-assign-${i}-to-${s.id}`} onClick={() => { actions.addPlayers(team, s.id, [n]); toast.success(`${n} added to ${s.name}`); }}>
+            {s.name}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

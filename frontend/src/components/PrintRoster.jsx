@@ -4,7 +4,7 @@ import { STRUCTURES, cleanName, keyOf, teamTitle } from "@/lib/planner";
 export default function PrintRoster({ teams, plans, conflicts, battle }) {
   const dup = new Set(conflicts.map((c) => keyOf(c.name)));
   const Name = ({ n }) => <span className={dup.has(keyOf(n)) ? "font-semibold underline decoration-dotted" : ""}>{dup.has(keyOf(n)) ? `⚠ ${n}` : n}</span>;
-  const list = (names) => names.length ? names.map((n, i) => <span key={i}><Name n={n} />{i < names.length - 1 ? ", " : ""}</span>) : <span className="text-neutral-400">—</span>;
+  const list = (names) => names.length ? names.map((n, i) => <span key={keyOf(n)}><Name n={n} />{i < names.length - 1 ? ", " : ""}</span>) : <span className="text-neutral-400">—</span>;
   return (
     <div data-testid="print-roster" className="hidden print:block">
       {teams.map((t) => {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlarmClock, X } from "lucide-react";
 import { toast } from "sonner";
+import { storage } from "@/lib/planner";
 import { battleStatus, formatBattleTime, formatCountdown, useNow } from "@/lib/battle";
 
 const DISMISS_KEY = "desert_storm_planner_reminder_dismissed_v1";
@@ -10,7 +11,7 @@ export default function BattleReminder({ battle }) {
   const st = battleStatus(battle, now);
   const startTs = st?.start.getTime() ?? null;
   const [dismissed, setDismissed] = useState(() => {
-    const v = Number(localStorage.getItem(DISMISS_KEY));
+    const v = Number(storage.get(DISMISS_KEY));
     return Number.isFinite(v) && v > 0 ? v : null;
   });
   const notified = useRef(null);
@@ -37,7 +38,7 @@ export default function BattleReminder({ battle }) {
         type="button"
         data-testid="battle-reminder-dismiss"
         aria-label="Dismiss reminder"
-        onClick={() => { setDismissed(startTs); try { localStorage.setItem(DISMISS_KEY, String(startTs)); } catch { /* ignore */ } }}
+        onClick={() => { setDismissed(startTs); storage.set(DISMISS_KEY, String(startTs)); }}
         className="flex size-10 shrink-0 items-center justify-center rounded text-[var(--sand)] hover:bg-white/10"
       >
         <X className="size-4" />

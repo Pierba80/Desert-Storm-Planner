@@ -53,51 +53,69 @@ export const totalPower = (names, members) => {
   return names.reduce((s, n) => s + powerOf(idx, n), 0);
 };
 
-// Greedy balance: strongest go to the weaker side, starters first then reserves.
-export function proposeBalance(teams, members) {
-  const idx = memberIndex(members);
-  const rosterNames = [...teams.A.starters, ...teams.A.reserves, ...teams.B.starters, ...teams.B.reserves];
+const LIMITS = { starters: MAX_STARTERS, reserves: MAX_RESERVES };
+
+function uniqueNames(names) {
   const seen = new Set();
-  const pool = [...rosterNames, ...members.map((m) => m.name)].filter((n) => {
+  return names.filter((n) => {
     const k = keyOf(n);
     if (!k || seen.has(k)) return false;
     seen.add(k);
     return true;
   });
-  const byPower = (a, b) => powerOf(idx, b) - powerOf(idx, a);
-  const res = { A: { starters: [], reserves: [] }, B: { starters: [], reserves: [] } };
-  const tot = { A: 0, B: 0 };
-  // Players already on a team's building stay in that team.
-  const pinnedKeys = new Set();
+}
+
+// First roster list of a team that still has room, or null when the team is full.
+function openList(roster) {
+  if (roster.starters.length < MAX_STARTERS) return "starters";
+  if (roster.reserves.length < MAX_RESERVES) return "reserves";
+  return null;
+}
+
+// Players already on a team's building stay in that team; returns their keys.
+function pinBuildingPlayers(teams, pool, res, tot, power) {
+  const pinned = new Set();
   for (const t of ["A", "B"]) {
-    const onBuildings = Object.values(teams[t].assignments).flatMap((a) => [a.leader, ...a.players]);
-    for (const n of pool.filter((x) => onBuildings.some((b) => keyOf(b) === keyOf(x))).sort(byPower)) {
-      const k = keyOf(n);
-      if (pinnedKeys.has(k)) continue;
-      const list = res[t].starters.length < MAX_STARTERS ? "starters" : res[t].reserves.length < MAX_RESERVES ? "reserves" : null;
-      if (!list) continue;
-      pinnedKeys.add(k);
+    const onBuildings = new Set(Object.values(teams[t].assignments).flatMap((a) => [a.leader, ...a.players]).map(keyOf));
+    for (const n of pool.filter((x) => onBuildings.has(keyOf(x)))) {
+      const list = openList(res[t]);
+      if (pinned.has(keyOf(n)) || !list) continue;
+      pinned.add(keyOf(n));
       res[t][list].push(n);
-      tot[t] += list === "starters" ? powerOf(idx, n) : 0;
+      if (list === "starters") tot[t] += power(n);
     }
   }
-  const sorted = pool.filter((n) => !pinnedKeys.has(keyOf(n))).sort(byPower);
-  const startersLeft = MAX_STARTERS * 2 - res.A.starters.length - res.B.starters.length;
-  const fill = (names, list, max) => {
-    const left = [];
-    for (const n of names) {
-      const open = ["A", "B"].filter((t) => res[t][list].length < max);
-      if (!open.length) {
-        left.push(n);
-        continue;
-      }
-      open.sort((x, y) => tot[x] - tot[y] || res[x][list].length - res[y][list].length);
-      res[open[0]][list].push(n);
-      tot[open[0]] += powerOf(idx, n);
+  return pinned;
+}
+
+// Each name goes to the side with less power; returns names that did not fit.
+function fillGreedy(names, list, res, tot, power) {
+  const left = [];
+  for (const n of names) {
+    const open = ["A", "B"].filter((t) => res[t][list].length < LIMITS[list]);
+    if (!open.length) {
+      left.push(n);
+      continue;
     }
-    return left;
-  };
-  const afterStarters = fill(sorted.slice(0, startersLeft), "starters", MAX_STARTERS);
-  const excluded = fill([...afterStarters, ...sorted.slice(startersLeft)], "reserves", MAX_RESERVES);
-  return { rosters: res, totals: tot, excluded, poolSize: pool.length, pinned: pinnedKeys.size };
+    open.sort((x, y) => tot[x] - tot[y] || res[x][list].length - res[y][list].length);
+    res[open[0]][list].push(n);
+    tot[open[0]] += power(n);
+  }
+  return left;
+}
+
+// Greedy balance by power: pinned building players first, then starters, then reserves.
+export function proposeBalance(teams, members) {
+  const idx = memberIndex(members);
+  const power = (n) => powerOf(idx, n);
+  const rosterNames = ["A", "B"].flatMap((t) => [...teams[t].starters, ...teams[t].reserves]);
+  const pool = uniqueNames([...rosterNames, ...members.map((m) => m.name)]).sort((a, b) => power(b) - power(a));
+  const res = { A: { starters: [], reserves: [] }, B: { starters: [], reserves: [] } };
+  const tot = { A: 0, B: 0 };
+  const pinned = pinBuildingPlayers(teams, pool, res, tot, power);
+  const rest = pool.filter((n) => !pinned.has(keyOf(n)));
+  const startersLeft = MAX_STARTERS * 2 - res.A.starters.length - res.B.starters.length;
+  const afterStarters = fillGreedy(rest.slice(0, startersLeft), "starters", res, tot, power);
+  const excluded = fillGreedy([...afterStarters, ...rest.slice(startersLeft)], "reserves", res, tot, power);
+  return { rosters: res, totals: tot, excluded, poolSize: pool.length, pinned: pinned.size };
 }

@@ -72,6 +72,34 @@ const STATE_KEY = "desert_storm_planner_state_v3";
 const LEGACY_KEY = "desert_tactical_planner_state_v2";
 const IMAGE_KEY = "desert_storm_planner_map_v3";
 
+// localStorage wrapper: failures (private mode, quota) are logged, never thrown.
+export const storage = {
+  get(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn(`Could not read "${key}" from storage`, e);
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      console.warn(`Could not save "${key}" to storage`, e);
+      return false;
+    }
+  },
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`Could not remove "${key}" from storage`, e);
+    }
+  },
+};
+
 export const cleanName = (s) => (s ?? "").trim();
 export const keyOf = (s) => cleanName(s).toLowerCase();
 
@@ -116,9 +144,9 @@ function loadState() {
     members: [],
     battle: { at: null, weekly: false },
   };
+  const raw = storage.get(STATE_KEY) ?? storage.get(LEGACY_KEY);
+  if (!raw) return base;
   try {
-    const raw = localStorage.getItem(STATE_KEY) ?? localStorage.getItem(LEGACY_KEY);
-    if (!raw) return base;
     const p = JSON.parse(raw);
     const sameLayout = p.layoutVersion === LAYOUT_VERSION;
     return {
@@ -129,7 +157,8 @@ function loadState() {
       members: dedupeMembers((Array.isArray(p.members) ? p.members : []).map(normMember)),
       battle: { at: p.battle?.at ?? null, weekly: p.battle?.weekly ?? false },
     };
-  } catch {
+  } catch (e) {
+    console.warn("Saved planner data is corrupted, starting fresh", e);
     return base;
   }
 }
@@ -144,24 +173,13 @@ export function usePlanner() {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STATE_KEY, JSON.stringify(state));
-        setSavedAt(new Date());
-      } catch {
-        /* storage unavailable */
-      }
+      if (storage.set(STATE_KEY, JSON.stringify(state))) setSavedAt(new Date());
     }, 300);
     return () => clearTimeout(t);
   }, [state]);
 
   useEffect(() => {
-    const flush = () => {
-      try {
-        localStorage.setItem(STATE_KEY, JSON.stringify(latest.current));
-      } catch {
-        /* ignore */
-      }
-    };
+    const flush = () => storage.set(STATE_KEY, JSON.stringify(latest.current));
     const onVis = () => document.visibilityState === "hidden" && flush();
     window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", onVis);
@@ -250,29 +268,14 @@ export function usePlanner() {
 }
 
 export function useMapImage() {
-  const [src, setSrc] = useState(() => {
-    try {
-      return localStorage.getItem(IMAGE_KEY) ?? DEFAULT_MAP_SRC;
-    } catch {
-      return DEFAULT_MAP_SRC;
-    }
-  });
+  const [src, setSrc] = useState(() => storage.get(IMAGE_KEY) ?? DEFAULT_MAP_SRC);
   const replace = useCallback((dataUrl) => {
     setSrc(dataUrl);
-    try {
-      localStorage.setItem(IMAGE_KEY, dataUrl);
-      return true;
-    } catch {
-      return false;
-    }
+    return storage.set(IMAGE_KEY, dataUrl);
   }, []);
   const reset = useCallback(() => {
     setSrc(DEFAULT_MAP_SRC);
-    try {
-      localStorage.removeItem(IMAGE_KEY);
-    } catch {
-      /* ignore */
-    }
+    storage.remove(IMAGE_KEY);
   }, []);
   return { src, isDefault: src === DEFAULT_MAP_SRC, replace, reset };
 }
@@ -327,12 +330,12 @@ export function findConflicts(placements) {
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export const placementLabel = (p) =>
-  p.role === "starter"
-    ? `Team ${p.team} · Starter`
-    : p.role === "reserve"
-      ? `Team ${p.team} · Reserve`
-      : `Team ${p.team} · ${STRUCTURE_BY_ID[p.id]?.name ?? p.id}${p.role === "leader" ? " (leader)" : ""}`;
+export function placementLabel(p) {
+  if (p.role === "starter") return `Team ${p.team} · Starter`;
+  if (p.role === "reserve") return `Team ${p.team} · Reserve`;
+  const building = STRUCTURE_BY_ID[p.id]?.name ?? p.id;
+  return `Team ${p.team} · ${building}${p.role === "leader" ? " (leader)" : ""}`;
+}
 
 export function unassignedMembers(members, placements) {
   return members.filter((m) => !placements.has(keyOf(m.name))).map((m) => m.name);

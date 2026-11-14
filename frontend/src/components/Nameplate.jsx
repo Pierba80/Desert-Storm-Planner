@@ -33,7 +33,7 @@ export default function Nameplate({ box, color, editMode, onPointerDown, onClick
         {c.leaderLine}
       </span>
       {c.playerLines.map((t, i) => (
-        <span key={i} data-testid={`nameplate-players-${box.id}-${i}`} className="block" style={line(PLATE_FONTS.player, PLATE.player, PLATE_COLORS.player)}>
+        <span key={`${box.id}-line-${t}`} data-testid={`nameplate-players-${box.id}-${i}`} className="block" style={line(PLATE_FONTS.player, PLATE.player, PLATE_COLORS.player)}>
           {t}
         </span>
       ))}
