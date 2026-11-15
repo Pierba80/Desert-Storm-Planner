@@ -138,8 +138,13 @@ export default function Planner() {
             label={isPlaying ? "Audio ON" : "Audio OFF"}
             active={isPlaying}
             onClick={toggleAudio}
-            icon={isPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          />
+           >
+             {isPlaying ? (       
+               <Volume2 className="size-4" text-emerald-400" />
+            ) : (
+                 <VolumeX className="size-4" />
+            )}
+                 </HeaderBtn>
           <audio ref={audioRef} src="/audio.mp3" loop />
             
             <DropdownMenu>
