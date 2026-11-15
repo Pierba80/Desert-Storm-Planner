@@ -3,13 +3,13 @@
   "name": "Desert Storm Tactical Planner",
   "icons": [
     {
-      "src": "Last%20war%20Desert.png",
+      "src": "Last%20war%20Desert2.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "Last%20war%20Desert.png",
+      "src": "Last%20war%20Desert2.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
