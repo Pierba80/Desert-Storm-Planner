@@ -133,6 +133,15 @@ export default function Planner() {
           </div>
           <div className="ml-auto flex items-center gap-1">
             <HeaderBtn testId="edit-layout-btn" active={editMode} label={editMode ? "Done editing" : "Edit layout"} onClick={() => { setEditMode((v) => !v); setView("map"); }}><Move className="size-4" /></HeaderBtn>
+                      <HeaderBtn
+            testId="audio-btn"
+            label={isPlaying ? "Audio ON" : "Audio OFF"}
+            active={isPlaying}
+            onClick={toggleAudio}
+            icon={isPlaying ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          />
+          <audio ref={audioRef} src="/audio.mp3" loop />
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" data-testid="map-menu-btn" className="hdr-btn h-9 gap-1.5 px-2.5"><ImageUp className="size-4" /> <span className="hidden md:inline">Map</span></Button>
