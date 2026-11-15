@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { CircleHelp, Download, ImageUp, LayoutGrid, Map as MapIcon, Move, Printer, RotateCcw, Shuffle, TriangleAlert, Users, UsersRound } from "lucide-react";
+import { CircleHelp, Volume2, VolumeX, Download, ImageUp, LayoutGrid,Map as MapIcon, Move, Printer, RotateCcw, Shuffle, TriangleAlert, Users, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import BattleMap from "@/components/BattleMap";
 import SidePanel from "@/components/SidePanel";
