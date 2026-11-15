@@ -1,4 +1,3 @@
-import { useState, useRef } from "react";
 import "@/App.css";
 import Planner from "@/pages/Planner";
 
