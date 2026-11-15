@@ -48,6 +48,20 @@ export default function Planner() {
   const [exporting, setExporting] = useState(false);
   const [printTeams, setPrintTeams] = useState(TEAMS);
   const fileRef = useRef(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
+  const toggleAudio = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  
 
   const placements = useMemo(() => placementsByName(state.teams), [state.teams]);
   const conflicts = useMemo(() => findConflicts(placements), [placements]);
