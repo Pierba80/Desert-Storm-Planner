@@ -140,7 +140,7 @@ export default function Planner() {
             onClick={toggleAudio}
            >
              {isPlaying ? (       
-               <Volume2 className="size-4" text-emerald-400" />
+               <Volume2 className="size-4 text-emerald-400" />
             ) : (
                  <VolumeX className="size-4" />
             )}
