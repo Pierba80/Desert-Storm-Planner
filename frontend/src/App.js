@@ -25,30 +25,34 @@ function App() {
       <audio ref={audioRef} src="/audio.mp3" loop />
 
       {/* Pulsante Audio in alto a destra */}
-      <button
-        onClick={toggleAudio}
-        title={isPlaying ? "Disattiva audio" : "Attiva audio"}
+    import "@/App.css";
+import Planner from "@/pages/Planner";
+
+function App() {
+  return (
+    <>
+      <Planner />
+      <div
         style={{
           position: "fixed",
-          top: "14px",
-          right: "14px",
+          bottom: "64px",
+          right: "16px",
           zIndex: 99999,
-          backgroundColor: isPlaying ? "#eab308" : "rgba(24, 24, 27, 0.9)",
-          color: isPlaying ? "#000000" : "#ffffff",
-          border: "1px solid rgba(234, 179, 8, 0.5)",
-          borderRadius: "8px",
-          padding: "6px 12px",
-          fontSize: "12px",
-          fontWeight: "bold",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+          color: "rgba(255, 255, 255, 0.55)",
+          fontSize: "11px",
+          pointerEvents: "none",
+          userSelect: "none",
         }}
       >
-        {isPlaying ? "🔊 Audio ON" : "🔇 Audio OFF"}
-      </button>
+        © {new Date().getFullYear()} Pierba - Tutti i diritti riservati
+      </div>
+    </>
+  );
+}
+
+export default App;
+
+
 
       {/* Scritta Copyright */}
       <div
