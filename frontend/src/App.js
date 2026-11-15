@@ -4,12 +4,27 @@ import Planner from "@/pages/Planner";
 function App() {
   return (
     <>
-    <Planner />
-    <div className="fixed bottom-2 left-3 z-50 text-xs text-white/60 pointer-events-none select-none">
-      @ {new Date().getFullYear()} Pierba - Tutti i diritti riservati
-    </div>
-  </>
- );
+      <Planner />
+      <div
+        style={{
+          position: "fixed",
+          bottom: "10px",
+          left: "12px",
+          zIndex: 99999,
+          backgroundColor: "rgba(0, 0, 0, 0.65)",
+          color: "#ffffff",
+          padding: "4px 10px",
+          borderRadius: "6px",
+          fontSize: "12px",
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      >
+        © {new Date().getFullYear()} Pīərbâ - Tutti i diritti riservati
+      </div>
+    </>
+  );
 }
 
 export default App;
+
