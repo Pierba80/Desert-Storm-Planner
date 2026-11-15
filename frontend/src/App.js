@@ -20,7 +20,7 @@ function App() {
           userSelect: "none",
         }}
       >
-        © {new Date().getFullYear()} Pīərbâ - Tutti i diritti riservati
+        © {new Date().getFullYear()} Pīərbâ 
       </div>
     </>
   );
