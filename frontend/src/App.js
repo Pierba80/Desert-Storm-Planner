@@ -42,9 +42,7 @@ function App() {
           cursor: "pointer",
         }}
       >
-        {isPlaying ? "🔊 Audio ON" : "🔇 Audio OFF"}
-      </button>
-
+      
       {/* Scritta Copyright */}
       <div
         style={{
