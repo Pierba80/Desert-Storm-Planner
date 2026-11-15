@@ -8,23 +8,20 @@ function App() {
       <div
         style={{
           position: "fixed",
-          bottom: "10px",
-          left: "12px",
+          bottom: "64px",
+          right: "16px",
           zIndex: 99999,
-          backgroundColor: "rgba(0, 0, 0, 0.65)",
-          color: "#ffffff",
-          padding: "4px 10px",
-          borderRadius: "6px",
-          fontSize: "12px",
+          color: "rgba(255, 255, 255, 0.55)",
+          fontSize: "11px",
           pointerEvents: "none",
           userSelect: "none",
         }}
       >
-        © {new Date().getFullYear()} Pīərbâ 
+        © {new Date().getFullYear()} Pīərbâ
       </div>
     </>
   );
 }
 
 export default App;
-
+          
