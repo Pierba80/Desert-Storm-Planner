@@ -58,7 +58,7 @@ function App() {
           userSelect: "none",
         }}
       >
-        © {new Date().getFullYear()} Pierba - Tutti i diritti riservati
+        © {new Date().getFullYear()} Pīərbâ
       </div>
     </>
   );
