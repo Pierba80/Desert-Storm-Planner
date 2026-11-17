@@ -153,7 +153,7 @@ export default function Planner() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem data-testid="replace-map-item" onClick={() => fileRef.current?.click()}>Upload / replace map image</DropdownMenuItem>
                 <DropdownMenuItem data-testid="restore-map-item" disabled={map.isDefault} onClick={() => { map.reset(); toast("Original map restored"); }}>Restore original map</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { map.replace("/Desert-map-V2.png"); toast.success("Mappa V2 caricata"); }}> Usa Mappa V2 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { map.replace("/desert-map-V2.png"); toast.success("Mappa V2 caricata"); }}> Usa Mappa V2 </DropdownMenuItem>
            </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
