@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export const STAGE_W = 1000;
 export const DEFAULT_MAP_SRC = "/Desert-map.png";
+export const SECOND_MAP_SRC = " desert-map-V2.png";
 export const DEFAULT_MAP_RATIO = 941 / 1672;
 export const LAYOUT_VERSION = 11;
 export const MAX_STARTERS = 20;
