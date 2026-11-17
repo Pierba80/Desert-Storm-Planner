@@ -15,8 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import {
-  TEAMS, TEAM_COLOR, dedupeNames, findConflicts, memberIndex, placementsByName, teamTitle, unassignedMembers, useMapImage, usePlanner,
+import { TEAMS, TEAM_COLOR, dedupeNames, findConflicts, memberIndex, placementsByName, teamTitle, unassignedMembers, useMapImage, usePlanner, DEFAULT_MAP_SRC, SECOND_MAP_SRC,
 } from "@/lib/planner";
 import { battleLabel } from "@/lib/battle";
 import { exportTeamPlan, fileToDataUrl } from "@/lib/exportPlan";
