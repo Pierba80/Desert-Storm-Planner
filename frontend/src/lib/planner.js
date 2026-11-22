@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+
 export const STAGE_W = 1000;
 export const DEFAULT_MAP_SRC = "/Desert-map.png";
 export const SECOND_MAP_SRC = " desert-map-V2.png";
@@ -8,10 +9,13 @@ export const LAYOUT_VERSION = 11;
 export const MAX_STARTERS = 20;
 export const MAX_RESERVES = 10;
 
+
 export const TEAMS = ["A", "B"];
 export const teamTitle = (t) => `DESERT STORM TEAM ${t}`;
 export const TEAM_COLOR = { A: "#3E7BE0", B: "#D9403A" };
 export const SQUAD_TYPES = ["Tank", "Aircraft", "Missile", "Mixed"];
+export const AVATAR_PRESETS = ["🎖️", "🪖", "🛡️", "⚔️", "🚀", "🔥", "⚡", "👑", "🦅", "🐺"];
+
 
 export const STRUCTURES = [
   { id: "info_center", name: "Info Center" },
@@ -28,6 +32,7 @@ export const STRUCTURES = [
 ];
 export const STRUCTURE_BY_ID = Object.fromEntries(STRUCTURES.map((s) => [s.id, s]));
 
+
 // Building centre + size, % of map width/height (calibrated on Desert-map.png 1672x941).
 export const DEFAULT_HOTSPOTS = {
   info_center: { x: 34.8, y: 23.2, w: 10, h: 14 },
@@ -42,6 +47,7 @@ export const DEFAULT_HOTSPOTS = {
   mercenary: { x: 50.0, y: 77.0, w: 12, h: 15 },
   tech_center: { x: 67.3, y: 79.6, w: 9, h: 13 },
 };
+
 
 // Printed map labels, relative to the building centre (% of map).
 export const MAP_LABELS = {
@@ -58,6 +64,7 @@ export const MAP_LABELS = {
   tech_center: { dx: -0.2, dy: 8.7, w: 10.4, h: 4.8 },
 };
 
+
 // Preferred nameplate side per building (Silo is auto-placed).
 export const PLATE_SIDE = {
   oil_1: "left", hospital_1: "left",
@@ -66,12 +73,15 @@ export const PLATE_SIDE = {
   info_center: "above", hospital_4: "above", arsenal: "above", mercenary: "above",
 };
 
+
 export const emptyAssignment = () => ({ leader: "", players: [] });
 const emptyTeam = () => ({ assignments: {}, starters: [], reserves: [] });
+
 
 const STATE_KEY = "desert_storm_planner_state_v3";
 const LEGACY_KEY = "desert_tactical_planner_state_v2";
 const IMAGE_KEY = "desert_storm_planner_map_v3";
+
 
 // localStorage wrapper: failures (private mode, quota) are logged, never thrown.
 export const storage = {
@@ -101,8 +111,10 @@ export const storage = {
   },
 };
 
+
 export const cleanName = (s) => (s ?? "").trim();
 export const keyOf = (s) => cleanName(s).toLowerCase();
+
 
 export function dedupeNames(names) {
   const seen = new Map();
@@ -113,6 +125,7 @@ export function dedupeNames(names) {
   return [...seen.values()];
 }
 
+
 export function dedupeMembers(list) {
   const seen = new Map();
   for (const m of list) {
@@ -120,13 +133,31 @@ export function dedupeMembers(list) {
     if (!name) continue;
     const k = name.toLowerCase();
     const prev = seen.get(k);
-    if (!prev) seen.set(k, { name, power: m.power ?? null, squad: m.squad ?? "" });
-    else seen.set(k, { ...prev, power: prev.power ?? m.power ?? null, squad: prev.squad || m.squad || "" });
+    if (!prev) {
+      seen.set(k, {
+        name,
+        power: m.power ?? null,
+        squad: m.squad ?? "",
+        avatar: m.avatar || "🎖️",
+      });
+    } else {
+      seen.set(k, {
+        ...prev,
+        power: prev.power ?? m.power ?? null,
+        squad: prev.squad || m.squad || "",
+        avatar: (prev.avatar && prev.avatar !== "🎖️" ? prev.avatar : m.avatar) || "🎖️",
+      });
+    }
   }
   return [...seen.values()];
 }
 
-const normMember = (m) => (typeof m === "string" ? { name: m, power: null, squad: "" } : { name: m.name ?? "", power: m.power ?? null, squad: m.squad ?? "" });
+
+const normMember = (m) =>
+  typeof m === "string"
+    ? { name: m, power: null, squad: "", avatar: "🎖️" }
+    : { name: m.name ?? "", power: m.power ?? null, squad: m.squad ?? "", avatar: m.avatar || "🎖️" };
+
 
 function normTeam(t) {
   const assignments = {};
@@ -135,6 +166,7 @@ function normTeam(t) {
   }
   return { assignments, starters: Array.isArray(t?.starters) ? t.starters : [], reserves: Array.isArray(t?.reserves) ? t.reserves : [] };
 }
+
 
 function loadState() {
   const base = {
@@ -164,7 +196,9 @@ function loadState() {
   }
 }
 
+
 const without = (list, name) => list.filter((n) => keyOf(n) !== keyOf(name));
+
 
 export function usePlanner() {
   const [state, setState] = useState(loadState);
@@ -172,12 +206,14 @@ export function usePlanner() {
   const latest = useRef(state);
   latest.current = state;
 
+
   useEffect(() => {
     const t = setTimeout(() => {
       if (storage.set(STATE_KEY, JSON.stringify(state))) setSavedAt(new Date());
     }, 300);
     return () => clearTimeout(t);
   }, [state]);
+
 
   useEffect(() => {
     const flush = () => storage.set(STATE_KEY, JSON.stringify(latest.current));
@@ -190,15 +226,18 @@ export function usePlanner() {
     };
   }, []);
 
+
   const updateTeam = useCallback((team, fn) => {
     setState((s) => ({ ...s, teams: { ...s.teams, [team]: fn(s.teams[team]) } }));
   }, []);
+
 
   const updateAssignment = useCallback(
     (team, id, fn) =>
       updateTeam(team, (t) => ({ ...t, assignments: { ...t.assignments, [id]: fn(t.assignments[id] ?? emptyAssignment()) } })),
     [updateTeam],
   );
+
 
   const actions = useMemo(
     () => ({
@@ -247,117 +286,3 @@ export function usePlanner() {
           return { ...t, ...next };
         }),
       applyRosters: (rosters) =>
-        setState((s) => ({
-          ...s,
-          teams: {
-            A: { ...s.teams.A, starters: rosters.A.starters, reserves: rosters.A.reserves },
-            B: { ...s.teams.B, starters: rosters.B.starters, reserves: rosters.B.reserves },
-          },
-        })),
-      moveHotspot: (id, x, y) => setState((s) => ({ ...s, hotspots: { ...s.hotspots, [id]: { ...s.hotspots[id], x, y } } })),
-      movePlate: (id, dx, dy) => setState((s) => ({ ...s, plateOffsets: { ...s.plateOffsets, [id]: { dx, dy } } })),
-      autoPlates: () => setState((s) => ({ ...s, plateOffsets: {} })),
-      resetLayout: () => setState((s) => ({ ...s, hotspots: { ...DEFAULT_HOTSPOTS }, plateOffsets: {} })),
-      setBattle: (battle) => setState((s) => ({ ...s, battle })),
-      setMembers: (members) => setState((s) => ({ ...s, members: dedupeMembers(members) })),
-      setMembersRaw: (members) => setState((s) => ({ ...s, members })),
-    }),
-    [updateTeam, updateAssignment],
-  );
-
-  return { state, savedAt, actions };
-}
-
-export function useMapImage() {
-  const [src, setSrc] = useState(() => storage.get(IMAGE_KEY) ?? DEFAULT_MAP_SRC);
-  const replace = useCallback((dataUrl) => {
-    setSrc(dataUrl);
-    return storage.set(IMAGE_KEY, dataUrl);
-  }, []);
-  const reset = useCallback(() => {
-    setSrc(DEFAULT_MAP_SRC);
-    storage.remove(IMAGE_KEY);
-  }, []);
-  return { src, isDefault: src === DEFAULT_MAP_SRC, replace, reset };
-}
-
-export const hasAssignment = (a) => !!a && (cleanName(a.leader) !== "" || a.players.some((p) => cleanName(p)));
-
-export function memberIndex(members) {
-  return new Map(members.map((m) => [keyOf(m.name), m]));
-}
-
-export function formatPower(p) {
-  if (p === null || p === undefined || p === "" || Number.isNaN(Number(p))) return "—";
-  const n = Number(p);
-  return `${n >= 100 ? Math.round(n) : Math.round(n * 10) / 10}M`;
-}
-
-// Where each name appears: buildings (leader/player) and rosters, across both teams.
-export function placementsByName(teams) {
-  const out = new Map();
-  const put = (n, p) => {
-    const k = keyOf(n);
-    if (!k) return;
-    const cur = out.get(k) ?? { name: cleanName(n), placements: [] };
-    cur.placements.push(p);
-    out.set(k, cur);
-  };
-  for (const t of TEAMS) {
-    for (const s of STRUCTURES) {
-      const a = teams[t].assignments[s.id];
-      if (!a) continue;
-      put(a.leader, { team: t, id: s.id, role: "leader" });
-      a.players.forEach((p) => put(p, { team: t, id: s.id, role: "player" }));
-    }
-    teams[t].starters.forEach((n) => put(n, { team: t, id: "starters", role: "starter" }));
-    teams[t].reserves.forEach((n) => put(n, { team: t, id: "reserves", role: "reserve" }));
-  }
-  return out;
-}
-
-export const isBuildingPlacement = (p) => p.role === "leader" || p.role === "player";
-
-// Names in both teams, or on more than one building.
-export function findConflicts(placements) {
-  const out = [];
-  for (const v of placements.values()) {
-    const teamsIn = new Set(v.placements.map((p) => p.team));
-    const buildings = v.placements.filter(isBuildingPlacement);
-    const bothTeams = teamsIn.size > 1;
-    const multiBuilding = buildings.length > 1;
-    if (bothTeams || multiBuilding) out.push({ ...v, bothTeams, multiBuilding, buildings });
-  }
-  return out.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export function placementLabel(p) {
-  if (p.role === "starter") return `Team ${p.team} · Starter`;
-  if (p.role === "reserve") return `Team ${p.team} · Reserve`;
-  const building = STRUCTURE_BY_ID[p.id]?.name ?? p.id;
-  return `Team ${p.team} · ${building}${p.role === "leader" ? " (leader)" : ""}`;
-}
-
-export function unassignedMembers(members, placements) {
-  return members.filter((m) => !placements.has(keyOf(m.name))).map((m) => m.name);
-}
-
-// Names of this team not yet on any building of this team.
-export function teamFreeNames(team, teams) {
-  const t = teams[team];
-  const used = new Set(
-    Object.values(t.assignments).flatMap((a) => [a.leader, ...a.players]).map(keyOf).filter(Boolean),
-  );
-  return dedupeNames([...t.starters, ...t.reserves]).filter((n) => !used.has(keyOf(n)));
-}
-
-export function suggestNames(all, query, exclude, limit = 8) {
-  const q = keyOf(query);
-  if (!q) return [];
-  const ex = new Set(exclude.map(keyOf));
-  const hits = all.filter((n) => !ex.has(keyOf(n)) && n.toLowerCase().includes(q));
-  hits.sort((a, b) => Number(!a.toLowerCase().startsWith(q)) - Number(!b.toLowerCase().startsWith(q)));
-  return hits.slice(0, limit);
-}
-
-export const slug = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-");
