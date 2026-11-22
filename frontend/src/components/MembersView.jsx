@@ -29,7 +29,199 @@ export default function MembersView({ members, placements, actions }) {
     actions.setMembers([...members, { name: name.trim(), power: parsePower(power), totalPower: parsePower(totalPower), squad }]);
     setName(""); setPower(""); setTotalPower(""); setSquad("");
   };
+const normSquadFromImport = (sq) => {
+    const s = String(sq ?? "").trim().toLowerCase();
+    if (s === "tank") return "Tank";
+    if (s === "aircraft") return "Aircraft";
+    if (s === "missile") return "Missile";
+    if (s === "mixed") return "Mixed";
+    return "";
+  };
 
+
+  const exportRosterFile = () => {
+    const profiles = {};
+    members.forEach((m) => {
+      profiles[keyOf(m.name)] = {
+        avatar: m.avatar || "🎖️",
+        power: m.power != null ? String(m.power) : "",
+        totalPower: m.totalPower != null ? String(m.totalPower) : "",
+        squad: String(m.squad || "tank").toLowerCase(),
+      };
+    });
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      members: members.map((m) => m.name),
+      profiles,
+      roster: members,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "alliance-roster.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast.success("Roster file downloaded (" + members.length + " players)");
+  };
+
+
+  const importRosterFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        let imported = [];
+        if (Array.isArray(data.roster)) {
+          imported = data.roster.map((m) => ({
+            name: String(m.name ?? "").trim(),
+            power: parsePower(m.power),
+            totalPower: parsePower(m.totalPower),
+            squad: normSquadFromImport(m.squad),
+            avatar: m.avatar || "🎖️",
+          }));
+        } else if (Array.isArray(data.members)) {
+          const profs = data.profiles && typeof data.profiles === "object" ? data.profiles : {};
+          imported = data.members.map((rawName) => {
+            const clean = String(rawName ?? "").trim();
+            const p = profs[clean] || profs[clean.toLowerCase()] || {};
+            return {
+              name: clean,
+              power: parsePower(p.power),
+              totalPower: parsePower(p.totalPower),
+              squad: normSquadFromImport(p.squad),
+              avatar: p.avatar || "🎖️",
+            };
+          });
+        } else {
+          throw new Error("invalid file");
+        }
+        const valid = imported.filter((m) => m.name);
+        actions.setMembers(valid);
+        toast.success("Imported " + valid.length + " players!");
+      } catch {
+        toast.error("Invalid roster file");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+
+  const exportRosterPng = async () => {
+    if (members.length === 0) return;
+    const sorted = [...members]
+      .map((m) => {
+        const num = Number(m.power);
+        const valid = !Number.isNaN(num) && num > 0;
+        const totNum = Number(m.totalPower);
+        const totValid = !Number.isNaN(totNum) && totNum > 0;
+        return {
+          name: m.name,
+          power: valid ? num : 0,
+          powerLabel: valid ? num + "M" + (totValid ? "/" + totNum + "M" : "") : "-",
+          squad: m.squad || "",
+          avatar: m.avatar || "🎖️",
+        };
+      })
+      .sort((a, b) => b.power - a.power);
+
+
+    const cols = 4;
+    const perCol = 25;
+    const colW = 285;
+    const gapX = 10;
+    const rowH = 38;
+    const headH = 66;
+    const pad = 16;
+    const w = pad * 2 + cols * colW + (cols - 1) * gapX;
+    const h = pad * 2 + headH + perCol * rowH;
+
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w * 2;
+    canvas.height = h * 2;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(2, 2);
+
+
+    ctx.fillStyle = "#0F1218";
+    ctx.fillRect(0, 0, w, h);
+
+
+    const totalPow = sorted.reduce((s, r) => s + r.power, 0);
+    ctx.fillStyle = "#F5B841";
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText("ALLIANCE ROSTER", pad, pad + 24);
+    ctx.fillStyle = "#94A3B8";
+    ctx.font = "13px sans-serif";
+    ctx.fillText("Players: " + sorted.length + " | 1st Squad Total: " + (Math.round(totalPow * 10) / 10) + "M", pad, pad + 46);
+
+
+    const badgeColor = {
+      Tank: "#2563EB",
+      Aircraft: "#7C3AED",
+      Missile: "#DC2626",
+      Mixed: "#D97706",
+    };
+
+
+    Array.from({ length: 100 }, (_, i) => sorted.at(i) ?? null).forEach((r, i) => {
+      const c = Math.floor(i / perCol);
+      const row = i % perCol;
+      const x = pad + c * (colW + gapX);
+      const y = pad + headH + row * rowH;
+
+
+      ctx.fillStyle = row % 2 === 0 ? "#1A1F2B" : "#141822";
+      ctx.fillRect(x, y, colW, rowH - 3);
+      ctx.strokeStyle = "rgba(245,184,65,0.2)";
+      ctx.strokeRect(x, y, colW, rowH - 3);
+
+
+      ctx.fillStyle = "#64748B";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText("#" + (i + 1), x + 7, y + 23);
+
+
+      if (!r) return;
+
+
+      ctx.font = "18px sans-serif";
+      ctx.fillText(r.avatar.startsWith("data:") ? "🎖️" : r.avatar, x + 36, y + 25);
+
+
+      ctx.fillStyle = "#F8FAFC";
+      ctx.font = "bold 12px sans-serif";
+      const shortName = r.name.length > 12 ? r.name.slice(0, 11) + "..." : r.name;
+      ctx.fillText(shortName, x + 66, y + 23);
+
+
+      ctx.fillStyle = "#F5B841";
+      ctx.font = "bold 10px sans-serif";
+      ctx.fillText(r.powerLabel, x + 146, y + 23);
+
+
+      if (r.squad) {
+        ctx.fillStyle = badgeColor[r.squad] || "#334155";
+        ctx.fillRect(x + 212, y + 7, 66, 20);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillText(r.squad.toUpperCase(), x + 216, y + 24);
+      }
+    });
+
+
+    const link = document.createElement("a");
+    link.download = "alliance-roster.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    toast.success("Roster PNG exported (" + sorted.length + " players)");
+  };
   return (
     <div data-testid="members-view" className="h-full overflow-y-auto">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
@@ -40,6 +232,21 @@ export default function MembersView({ members, placements, actions }) {
             <p className="mt-1 text-sm text-[var(--muted)]">Name, 1st squad power, total power and squad type — shared by Team A and Team B.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" className="btn-outline-gold h-10" disabled={members.length === 0} onClick={exportRosterPng}>PNG</Button>
+            <Button type="button" variant="outline" className="btn-outline-gold h-10" disabled={members.length === 0} onClick={exportRosterFile}>Export</Button>
+            <label className="inline-flex h-10 cursor-pointer items-center rounded-md border border-[var(--gold)]/40 px-3 text-sm font-medium text-[var(--gold)] hover:bg-[var(--gold)]/10">
+              Import
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.item(0) ?? undefined;
+                  importRosterFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
             <Button data-testid="paste-members-btn" className="btn-gold h-10 gap-1.5" onClick={() => setPasteOpen(true)}><ClipboardPaste className="size-4" /> Paste list</Button>
             <Button data-testid="dedupe-members-btn" variant="outline" className="btn-outline-gold h-10 gap-1.5" disabled={dupCount === 0} onClick={() => { actions.setMembers(members); toast.success(dupCount + " duplicate" + (dupCount > 1 ? "s" : "") + " removed"); }}>
               <Wand2 className="size-4" /> Remove duplicates{dupCount > 0 ? " (" + dupCount + ")" : ""}
