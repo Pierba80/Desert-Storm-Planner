@@ -137,6 +137,7 @@ export function dedupeMembers(list) {
       seen.set(k, {
         name,
         power: m.power ?? null,
+        totalPower: m.totalPower ?? null,
         squad: m.squad ?? "",
         avatar: m.avatar || "🎖️",
       });
@@ -144,6 +145,7 @@ export function dedupeMembers(list) {
       seen.set(k, {
         ...prev,
         power: prev.power ?? m.power ?? null,
+        totalPower: prev.totalPower ?? m.totalPower ?? null,
         squad: prev.squad || m.squad || "",
         avatar: (prev.avatar && prev.avatar !== "🎖️" ? prev.avatar : m.avatar) || "🎖️",
       });
@@ -152,11 +154,10 @@ export function dedupeMembers(list) {
   return [...seen.values()];
 }
 
-
 const normMember = (m) =>
   typeof m === "string"
-    ? { name: m, power: null, squad: "", avatar: "🎖️" }
-    : { name: m.name ?? "", power: m.power ?? null, squad: m.squad ?? "", avatar: m.avatar || "🎖️" };
+    ? { name: m, power: null, totalPower: null, squad: "", avatar: "🎖️" }
+    : { name: m.name ?? "", power: m.power ?? null, totalPower: m.totalPower ?? null, squad: m.squad ?? "", avatar: m.avatar || "🎖️" };
 
 
 function normTeam(t) {
