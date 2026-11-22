@@ -314,8 +314,194 @@ export default function MembersView({ members, placements, actions }) {
     toast.success(`Roster PNG exported (${sortedRows.length} players)`);
   };
 
-
-  return (
+return (
     <div data-testid="members-view" className="h-full overflow-y-auto">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="eyebrow">Alliance</p>
+            <h2 className="font-head text-3xl font-extrabold uppercase tracking-tight text-[var(--text)]">
+              Members <span data-testid="members-count" className="text-[var(--gold)]">{members.length}</span>
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">Avatar, name, power and squad type — shared by Team A and Team B.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button data-testid="export-png-btn" variant="outline" className="btn-outline-gold h-10 gap-1.5" disabled={members.length === 0} onClick={exportRosterPng}>
+              <ImageDown className="size-4" /> PNG
+            </Button>
+            <Button data-testid="export-roster-btn" variant="outline" className="btn-outline-gold h-10 gap-1.5" disabled={members.length === 0} onClick={exportRosterFile}>
+              <Download className="size-4" /> Export
+            </Button>
+            <label className="btn-outline-gold inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-md border border-[var(--gold)]/40 px-3 text-sm font-medium text-[var(--gold)] hover:bg-[var(--gold)]/10">
+              <Upload className="size-4" /> Import
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.item(0) ?? undefined;
+                  importRosterFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <Button data-testid="paste-members-btn" className="btn-gold h-10 gap-1.5" onClick={() => setPasteOpen(true)}>
+              <ClipboardPaste className="size-4" /> Paste list
+            </Button>
+            <Button
+              data-testid="dedupe-members-btn"
+              variant="outline"
+              className="btn-outline-gold h-10 gap-1.5"
+              disabled={dupCount === 0}
+              onClick={() => {
+                actions.setMembers(members);
+                toast.success(`${dupCount} duplicate${dupCount > 1 ? "s" : ""} removed`);
+              }}
+            >
+              <Wand2 className="size-4" /> Remove duplicates{dupCount > 0 ? ` (${dupCount})` : ""}
+            </Button>
+          </div>
+        </div>
+
+
+        <form onSubmit={addOne} className="mt-5 grid grid-cols-[auto_1fr_90px] gap-2 rounded-lg border border-[var(--line)] bg-[var(--panel)] p-3 sm:grid-cols-[auto_1fr_110px_150px_auto]">
+          <label
+            title="Upload avatar photo"
+            className="relative flex size-10 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-[var(--gold)]/50 bg-[var(--panel-2)] text-lg hover:border-[var(--gold)]"
+          >
+            {avatar?.startsWith("data:") ? <img src={avatar} alt="Avatar" className="size-full object-cover" /> : avatar}
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => handleNewAvatarFile(e.target.files?.[0])} />
+          </label>
+          <Input data-testid="member-name-input" placeholder="Player name" value={name} onChange={(e) => setName(e.target.value)} className="field h-10" />
+          <Input data-testid="member-power-input" placeholder="Power (M)" value={power} onChange={(e) => setPower(e.target.value)} className="field h-10" />
+          <SquadSelect value={squad} onChange={setSquad} testId="member-squad-select" />
+          <Button type="submit" data-testid="member-add-btn" className="btn-gold h-10" disabled={!name.trim()}>
+            <Plus className="size-4" /> Add
+          </Button>
+        </form>
+
+
+        <div className="mt-4 flex items-center gap-2 text-xs text-[var(--muted)]">
+          Sort:
+          {["power", "name", "added"].map((s) => (
+            <button
+              key={s}
+              type="button"
+              data-testid={`members-sort-${s}`}
+              onClick={() => setSort(s)}
+              className={`rounded px-2 py-1 uppercase tracking-wider ${sort === s ? "bg-[var(--gold)]/15 text-[var(--gold)]" : "hover:text-[var(--text)]"}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+
+        <ul data-testid="members-list" className="mt-2 space-y-1.5">
+          {rows.map(({ m, i }) => {
+            const teams = [...new Set((placements.get(keyOf(m.name))?.placements ?? []).map((p) => p.team))];
+            const currentAvatar = m.avatar || "🎖️";
+            const isImg = currentAvatar.startsWith("data:");
+            const pickerOpen = avatarPickerIdx === i;
+
+
+            return (
+              <li
+                key={i}
+                data-testid={`member-row-${slug(m.name || String(i))}`}
+                className="rounded-md border border-[var(--line)] bg-[var(--panel-2)] px-2 py-1.5"
+              >
+                <div className="grid grid-cols-[auto_1fr_80px_auto] items-center gap-2 sm:grid-cols-[auto_1fr_100px_140px_70px_auto]">
+                  <button
+                    type="button"
+                    title="Change avatar or upload photo"
+                    onClick={() => setAvatarPickerIdx(pickerOpen ? null : i)}
+                    className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--gold)]/40 bg-[var(--panel)] text-base hover:border-[var(--gold)]"
+                  >
+                    {isImg ? <img src={currentAvatar} alt={m.name} className="size-full object-cover" /> : currentAvatar}
+                  </button>
+                  <Input
+                    aria-label="Name"
+                    data-testid={`member-name-${i}`}
+                    value={m.name}
+                    onChange={(e) => update(i, { name: e.target.value })}
+                    className="field h-9 font-semibold"
+                  />
+                  <Input
+                    aria-label="Power"
+                    data-testid={`member-power-${i}`}
+                    defaultValue={m.power ?? ""}
+                    key={`p-${m.power}`}
+                    placeholder="—"
+                    onBlur={(e) => update(i, { power: parsePower(e.target.value) })}
+                    className="field h-9 font-mono"
+                  />
+                  <div className="hidden sm:block">
+                    <SquadSelect value={m.squad} onChange={(v) => update(i, { squad: v })} testId={`member-squad-${i}`} />
+                  </div>
+                  <span className="hidden gap-1 sm:flex">
+                    {teams.length ? (
+                      teams.map((t) => (
+                        <span key={t} className="rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: TEAM_COLOR[t] }}>
+                          {t}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-[var(--muted)]">no team</span>
+                    )}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid={`member-remove-${i}`}
+                    aria-label={`Remove ${m.name}`}
+                    onClick={() => actions.setMembersRaw(members.filter((_, j) => j !== i))}
+                    className="size-9 text-[var(--muted)] hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+
+
+                {pickerOpen && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-[var(--line)] pt-2">
+                    <label className="inline-flex h-7 cursor-pointer items-center gap-1 rounded border border-[var(--gold)]/40 bg-[var(--panel)] px-2 text-xs text-[var(--gold)] hover:bg-[var(--gold)]/10">
+                      <Upload className="size-3" /> Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          handleRowAvatarFile(i, e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {AVATAR_PRESETS.map((em) => (
+                      <button
+                        key={em}
+                        type="button"
+                        onClick={() => {
+                          update(i, { avatar: em });
+                          setAvatarPickerIdx(null);
+                        }}
+                        className={`flex size-7 items-center justify-center rounded text-sm ${
+                          currentAvatar === em ? "bg-[var(--gold)]/30 ring-1 ring-[var(--gold)]" : "hover:bg-white/10"
+                        }`}
+                      >
+                        {em}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+          {members.length === 0 && (
+            <li className="flex flex-col items-center gap-2 rounded-md border border-dashed border-[var(--line)] px-4 py-12 text-center text-sm text-[var(--muted)]">
+              <Users className="size-6 text-[var(--gold)]" /> No members yet — paste your alliance list or import a JSON file to start.
+            </li>
+          )}
+        </ul>
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          Power is in millions (e.g. 45.2 = 45.2M).{" "}
