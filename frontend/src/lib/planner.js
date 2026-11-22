@@ -285,4 +285,128 @@ export function usePlanner() {
           next[to] = [...next[to], cleanName(name)];
           return { ...t, ...next };
         }),
-      applyRosters: (rosters) =>
+    applyRosters: (rosters) =>
+        setState((s) => ({
+          ...s,
+          teams: {
+            A: { ...s.teams.A, starters: rosters.A.starters, reserves: rosters.A.reserves },
+            B: { ...s.teams.B, starters: rosters.B.starters, reserves: rosters.B.reserves },
+          },
+        })),
+      moveHotspot: (id, x, y) => setState((s) => ({ ...s, hotspots: { ...s.hotspots, [id]: { ...s.hotspots[id], x, y } } })),
+      movePlate: (id, dx, dy) => setState((s) => ({ ...s, plateOffsets: { ...s.plateOffsets, [id]: { dx, dy } } })),
+      autoPlates: () => setState((s) => ({ ...s, plateOffsets: {} })),
+      resetLayout: () => setState((s) => ({ ...s, hotspots: { ...DEFAULT_HOTSPOTS }, plateOffsets: {} })),
+      setBattle: (battle) => setState((s) => ({ ...s, battle })),
+      setMembers: (members) => setState((s) => ({ ...s, members: dedupeMembers(members) })),
+      setMembersRaw: (members) => setState((s) => ({ ...s, members })),
+    }),
+    [updateTeam, updateAssignment],
+  );
+
+
+  return { state, savedAt, actions };
+}
+
+
+export function useMapImage() {
+  const [src, setSrc] = useState(() => storage.get(IMAGE_KEY) ?? DEFAULT_MAP_SRC);
+  const replace = useCallback((dataUrl) => {
+    setSrc(dataUrl);
+    return storage.set(IMAGE_KEY, dataUrl);
+  }, []);
+  const reset = useCallback(() => {
+    setSrc(DEFAULT_MAP_SRC);
+    storage.remove(IMAGE_KEY);
+  }, []);
+  return { src, isDefault: src === DEFAULT_MAP_SRC, replace, reset };
+}
+
+
+export const hasAssignment = (a) => !!a && (cleanName(a.leader) !== "" || a.players.some((p) => cleanName(p)));
+
+
+export function memberIndex(members) {
+  return new Map(members.map((m) => [keyOf(m.name), m]));
+}
+
+
+export function formatPower(p) {
+  if (p === null || p === undefined || p === "" || Number.isNaN(Number(p))) return "—";
+  const n = Number(p);
+  return `${n >= 100 ? Math.round(n) : Math.round(n * 10) / 10}M`;
+}
+
+
+export function placementsByName(teams) {
+  const out = new Map();
+  const put = (n, p) => {
+    const k = keyOf(n);
+    if (!k) return;
+    const cur = out.get(k) ?? { name: cleanName(n), placements: [] };
+    cur.placements.push(p);
+    out.set(k, cur);
+  };
+  for (const t of TEAMS) {
+    for (const s of STRUCTURES) {
+      const a = teams[t].assignments[s.id];
+      if (!a) continue;
+      put(a.leader, { team: t, id: s.id, role: "leader" });
+      a.players.forEach((p) => put(p, { team: t, id: s.id, role: "player" }));
+    }
+    teams[t].starters.forEach((n) => put(n, { team: t, id: "starters", role: "starter" }));
+    teams[t].reserves.forEach((n) => put(n, { team: t, id: "reserves", role: "reserve" }));
+  }
+  return out;
+}
+
+
+export const isBuildingPlacement = (p) => p.role === "leader" || p.role === "player";
+
+
+export function findConflicts(placements) {
+  const out = [];
+  for (const v of placements.values()) {
+    const teamsIn = new Set(v.placements.map((p) => p.team));
+    const buildings = v.placements.filter(isBuildingPlacement);
+    const bothTeams = teamsIn.size > 1;
+    const multiBuilding = buildings.length > 1;
+    if (bothTeams || multiBuilding) out.push({ ...v, bothTeams, multiBuilding, buildings });
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+
+export function placementLabel(p) {
+  if (p.role === "starter") return `Team ${p.team} · Starter`;
+  if (p.role === "reserve") return `Team ${p.team} · Reserve`;
+  const building = STRUCTURE_BY_ID[p.id]?.name ?? p.id;
+  return `Team ${p.team} · ${building}${p.role === "leader" ? " (leader)" : ""}`;
+}
+
+
+export function unassignedMembers(members, placements) {
+  return members.filter((m) => !placements.has(keyOf(m.name))).map((m) => m.name);
+}
+
+
+export function teamFreeNames(team, teams) {
+  const t = teams[team];
+  const used = new Set(
+    Object.values(t.assignments).flatMap((a) => [a.leader, ...a.players]).map(keyOf).filter(Boolean),
+  );
+  return dedupeNames([...t.starters, ...t.reserves]).filter((n) => !used.has(keyOf(n)));
+}
+
+
+export function suggestNames(all, query, exclude, limit = 8) {
+  const q = keyOf(query);
+  if (!q) return [];
+  const ex = new Set(exclude.map(keyOf));
+  const hits = all.filter((n) => !ex.has(keyOf(n)) && n.toLowerCase().includes(q));
+  hits.sort((a, b) => Number(!a.toLowerCase().startsWith(q)) - Number(!b.toLowerCase().startsWith(q)));
+  return hits.slice(0, limit);
+}
+
+
+export const slug = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-");
