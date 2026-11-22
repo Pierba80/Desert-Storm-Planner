@@ -503,5 +503,105 @@ return (
             </li>
           )}
         </ul>
-        <p className="mt-3 text-xs text-[var(--muted)]">
+<p className="mt-3 text-xs text-[var(--muted)]">
           Power is in millions (e.g. 45.2 = 45.2M).{" "}
+          {members.length ? `Total ${formatPower(members.reduce((s, m) => s + (Number(m.power) || 0), 0))}` : ""}
+        </p>
+      </div>
+      <PasteDialog
+        open={pasteOpen}
+        onOpenChange={setPasteOpen}
+        onSave={(list, replace) => {
+          const next = replace ? list : [...members, ...list];
+          actions.setMembers(next);
+          setPasteOpen(false);
+          toast.success(`${list.length} members imported`);
+        }}
+      />
+    </div>
+  );
+}
+
+
+function SquadSelect({ value, onChange, testId }) {
+  return (
+    <Select value={value || "none"} onValueChange={(v) => onChange(v === "none" ? "" : v)}>
+      <SelectTrigger data-testid={testId} className="field h-9">
+        <SelectValue placeholder="Squad type" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">No type</SelectItem>
+        {SQUAD_TYPES.map((t) => (
+          <SelectItem key={t} value={t}>
+            {t}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+
+function PasteDialog({ open, onOpenChange, onSave }) {
+  const [text, setText] = useState("");
+  const parsed = parseMemberLines(text);
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) setText("");
+      }}
+    >
+      <DialogContent data-testid="paste-dialog" className="panel-dialog sm:max-w-lg">
+        <DialogHeader className="text-left">
+          <DialogTitle className="font-head text-2xl font-extrabold uppercase text-[var(--gold)]">Paste member list</DialogTitle>
+          <DialogDescription className="text-[var(--muted)]">
+            One player per line: name, power, squad type. Power and type are optional. Duplicates are removed automatically.
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
+          data-testid="paste-textarea"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={"Rex, 52.4M, Tank\nNova, 48.1, Aircraft\nBlaze 39.7M Missile"}
+          className="field min-h-48 font-mono text-sm"
+        />
+        <p data-testid="paste-count" className="text-xs text-[var(--muted)]">
+          {parsed.length} players detected{parsed.length ? ` · ${parsed.filter((p) => p.power != null).length} with power` : ""}
+        </p>
+        <DialogFooter className="gap-2">
+          <DialogClose asChild>
+            <Button variant="outline" data-testid="paste-cancel-btn">
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button
+            variant="outline"
+            data-testid="paste-replace-btn"
+            className="btn-outline-gold"
+            disabled={!parsed.length}
+            onClick={() => {
+              onSave(parsed, true);
+              setText("");
+            }}
+          >
+            Replace list
+          </Button>
+          <Button
+            data-testid="paste-add-btn"
+            className="btn-gold"
+            disabled={!parsed.length}
+            onClick={() => {
+              onSave(parsed, false);
+              setText("");
+            }}
+          >
+            Add to list
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+        
